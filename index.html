@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Ruby Metaprogramming - Leigh Halliday</title>
+
+		<meta name="description" content="Ruby Metaprogramming">
+		<meta name="author" content="Leigh Halliday">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/black.css" id="theme">
+
+		<!-- Code syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+
+		<style>
+		  .reveal section img {
+		  	border: 0px;
+		  	background: none;
+		  }
+		</style>
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h1>Ruby Metaprogramming</h1>
+					<h3>Leigh Halliday</h3>
+					<img src="images/flipgive.png" />
+				</section>
+
+				<section data-markdown>
+					# Tonight's Agenda
+					- What is metaprogramming?
+					- Code introspection
+					- Code creation
+				</section>
+
+				<section>
+					<h1>What is Metaprogramming?</h1>
+
+					<blockquote>Metaprogramming is the writing of computer programs with the ability to treat programs as their data. It means that a program could be designed to read, generate, analyse and/or transform other programs, and even modify itself while running.</blockquote>
+				</section>
+
+				<section data-markdown>
+					# Ruby is Dynamic
+					- Not compiled like C++, Rust
+					- I'm not talking about being dynamically typed
+					- Asking questions about code during runtime
+					- Change/create code during runtime
+				</section>
+
+				<section>
+					<section data-markdown>
+						# Introspection
+					</section>
+					<section>
+						<img style="max-height: 600px;" src="images/introspection-owl.jpg" />
+					</section>
+					<section data-markdown>
+						# Looking Inwards
+
+						- What motivates me?
+						- What qualities do I have?
+						- What are my tendencies?
+					</section>
+					<section>
+						<img style="max-height: 600px;" src="images/alpaca.jpg" />
+					</section>
+					<section data-markdown>
+						## Our Class
+						```
+						class Alpaca
+						  attr_accessor :name, :age
+						  def initialize(name, age)
+						    self.name = name
+						    self.age  = age
+						  end
+
+						  def spit
+						    "Patouey"
+						  end
+						end
+						```
+					</section>
+					<section data-markdown>
+						<script type="text/html">
+							## What does the data look like?
+							We can use `inspect` to get a visual representation of our data.
+							```
+							Alpaca.new("Spitty", 23).inspect
+							#<Alpaca:0x007f8dcaec4c80 @name="Spitty", @age=23>
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						## What methods are available?
+						```
+						Alpaca.instance_methods(false)
+						[:name, :name=, :age, :age=, :spit]
+						```
+					</section>
+					<section data-markdown>
+						## What instance variables are there?
+						```
+						Alpaca.new("Spitty", 23).instance_variables
+						# [:@name, :@age]
+						```
+					</section>
+					<section data-markdown>
+						## What does my class hierarchy look like?
+						```
+						spitty = Alpaca.new("Spitty", 23)
+						spitty.class
+						# Alpaca
+						spitty.instance_of?(Alpaca)
+						# true
+						spitty.class.ancestors
+						# [Alpaca, Object, Kernel, BasicObject]
+						```
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						# Digging Into Methods
+					</section>
+					<section data-markdown>
+						<script type="text/html">
+							## The Method object
+							There is a Method object which can give you all sorts of information about each method that you work with.
+							```
+							spitty = Alpaca.new("Spitty", 23)
+							spitty.method(:name=).inspect
+							# <Method: Alpaca#name=>
+							```
+						</script>
+					</section>
+					<section data-markdown>
+						## Where is this method located?
+						```
+						spitty.method(:name=).source_location
+						# ["(irb)", 34]
+						```
+						Normally this would be the source code file that you defined the class.
+						I did this in IRB so it looks a little different. The 2nd element of array
+						is which line of the file it is located on.
+					</section>
+					<section data-markdown>
+						## What params does it accept?
+
+						```
+						spitty.method(:name=).parameters
+						# [[:req]]
+						```
+					</section>
+					<section data-markdown>
+						## Who owns this method?
+
+						```
+						spitty.method(:spit).owner
+						# Alpaca
+						```
+					</section>
+				</section>
+
+				<section>
+					<section data-markdown>
+						# Dynamically creating methods
+					</section>
+					<section data-markdown>
+						## Warning! Use Sparingly!
+						- Can't grep easily
+						- Creates indirection
+						- Complicates troubleshooting
+					</section>
+					<section data-markdown>
+						## Two Main Methods
+						- define_method
+						- define_singleton_method
+					</section>
+					<section data-markdown>
+						```
+						class SayHi
+						  def initialize(*names)
+						    names.each do |name|
+						      define_singleton_method "hi_#{name.downcase}" do
+						        puts "Hi #{name}"
+						      end
+						    end
+						  end
+						end
+						```
+
+						```
+						hi = SayHi.new("Peter", "Paul")
+						hi.hi_peter
+						hi.hi_paul
+
+						hello = SayHi.new("Marian")
+						hello.hi_marian
+						```
+					</section>
+					<section data-markdown>
+						## Money Fields Example
+						#### Live coding... could be disaster
+					</section>
+				</section>
+
+			</div>
+
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/highlight/highlight.js', callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/zoom-js/zoom.js', async: true },
+					{ src: 'plugin/notes/notes.js', async: true }
+				]
+			});
+
+		</script>
+
+	</body>
+</html>
