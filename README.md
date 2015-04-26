@@ -1,4 +1,4 @@
-# Ruby DSL Presentation
+# Ruby Metaprogramming Presentation
 ## Created by Leigh Halliday
 [www.leighhalliday.com](http://www.leighhalliday.com)
 
