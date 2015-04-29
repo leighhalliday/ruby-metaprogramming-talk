@@ -193,12 +193,6 @@
 						# Dynamically creating methods
 					</section>
 					<section data-markdown>
-						## Warning! Use Sparingly!
-						- Can't grep easily
-						- Creates indirection
-						- Complicates troubleshooting
-					</section>
-					<section data-markdown>
 						## Two Main Methods
 						- define_method
 						- define_singleton_method
@@ -229,6 +223,54 @@
 						## Money Fields Example
 						#### Live coding... could be disaster
 					</section>
+				</section>
+
+				<section>
+					<section>
+						<h1>Warning</h1>
+						<h2>Proceed with Caution</h2>
+					</section>
+					<section data-markdown>
+					[rest-client](https://github.com/rest-client/rest-client)
+					```
+POSSIBLE_VERBS = ['get', 'put', 'post', 'delete']
+
+POSSIBLE_VERBS.each do |m|
+  define_method(m.to_sym) do |path, *args, &b|
+    r[path].public_send(m.to_sym, *args, &b)
+  end
+end
+
+def method_missing(s, * args, & b)
+  if POSSIBLE_VERBS.include? s
+    begin
+      r.send(s, *args, & b)
+    rescue RestClient::RequestFailed => e
+      print STDERR, e.response.body
+      raise e
+    end
+  else
+    super
+  end
+end
+					```
+					</section>
+					<section>
+						<h2>Creates indirection and complexity</h2>
+					</section>
+					<section>
+						<h2>More difficult to find code (can't grep)</h2>
+					</section>
+					<section>
+						<h2>Complicates troubleshooting</h2>
+					</section>
+					<section>
+						<h2>Can be slower</h2>
+					</section>
+				</section>
+
+				<section>
+					<h1>Thanks!</h1>
 				</section>
 
 			</div>
